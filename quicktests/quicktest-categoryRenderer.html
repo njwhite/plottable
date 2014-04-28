@@ -16,8 +16,10 @@
         ];
 
       var ds = new Plottable.DataSource(data);
-      var xScale = new Plottable.OrdinalScale().rangeType("bands");
-      var xAxis = new Plottable.XAxis(xScale, "bottom", function(d) { return d; } );
+      var xScale = new Plottable.OrdinalScale();
+      xScale.rangeType("bands");
+      // var xAxis = new Plottable.XAxis(xScale, "bottom", function(d) { return d; } );
+      var xAxis = new Plottable.PAxis(xScale, "bottom");
 
       var yScale = new Plottable.LinearScale();
       var yAxis = new Plottable.YAxis(yScale, "left");
@@ -27,6 +29,7 @@
                               .project("x", "name", xScale)
                               .project("y", "age", yScale)
                               .project("fill", function() {return "steelblue"});
+      // barRenderer.project("width", 50).barAlignment("center");
       var chart = new Plottable.StandardChart().center(barRenderer).xAxis(xAxis).yAxis(yAxis);
       // barRenderer._animate = false;
 

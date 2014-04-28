@@ -144,5 +144,9 @@ module Plottable {
     public copy(): Scale {
       return new Scale(this._d3Scale.copy());
     }
+
+    public ticks(count: number): any[] {
+      return this.domain();
+    }
   }
 }

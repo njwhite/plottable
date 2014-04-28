@@ -37,9 +37,9 @@ svg.plottable {
   shape-rendering: crispEdges;
 }
 
-.plottable .axis .tick line {
+/*.plottable .axis .tick line {
   opacity: 0;
-}
+}*/
 .plottable .x-axis path {
   fill: none;
   stroke-width: 2px;

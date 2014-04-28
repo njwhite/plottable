@@ -1,0 +1,55 @@
+<html>
+  <head>
+    <title>Custom Axes Quicktest</title>
+    <link rel="stylesheet" type="text/css" href="../../plottable.css">
+    <style>
+      .axis .bounding-box {
+        fill: red;
+        fill-opacity: 0.1;
+      }
+    </style>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="../../build/plottable.js"></script>
+    <script src="../../build/exampleUtil.js"></script>
+
+    <script>
+      window.onload = function() {
+        // var data = makeRandomData(20);
+        var data = [
+          {x: 0, y: 0},
+          {x: 2.5, y: 2.5},
+          {x: 5, y: 5},
+          {x: 7.5, y: 7.5},
+          {x: 10, y:10}
+        ];
+
+        data.forEach(function(d) { d.x = d.x/10; }); // divide by 10 to test decimals
+
+        var xScale = new Plottable.LinearScale();
+        var xAxisBottom = new Plottable.PAxis(xScale, "bottom");
+
+        var xAxisTop = new Plottable.PAxis(xScale, "top");
+
+        var yScale = new Plottable.LinearScale();
+        var yAxisLeft = new Plottable.PAxis(yScale, "left");
+
+        var yAxisRight = new Plottable.PAxis(yScale, "right");
+
+        var renderer = new Plottable.CircleRenderer(data, xScale, yScale);
+        // var gridlines = new Plottable.Gridlines(xScale, yScale);
+
+        var basicTable = new Plottable.Table([[null, xAxisTop, null],
+                                              [yAxisLeft, renderer, yAxisRight],
+                                              [null, xAxisBottom, null]]);
+        basicTable.renderTo("#axis-test");
+        // var pzi = new Plottable.PanZoomInteraction(renderer, xScale, yScale);
+        // pzi.registerWithComponent();
+        // window.xScale = xScale;
+      }
+    </script>
+  </head>
+  <body>
+    <svg id="axis-test" width="640" height="480"></svg>
+  </body>
+
+</html>
