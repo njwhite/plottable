@@ -111,6 +111,8 @@ declare module Plottable {
         * is used to support deregistering the same callback later, by passing in the same listener.
         * If there is already a callback associated with that listener, then the callback will be replaced.
         *
+        * This should NOT be called directly by a Component; registerToBroadcaster should be used instead.
+        *
         * @param listener The listener associated with the callback.
         * @param {IBroadcasterCallback} callback A callback to be called when the Scale's domain changes.
         * @returns {Broadcaster} this object
@@ -129,6 +131,34 @@ declare module Plottable {
         * @returns {Broadcaster} this object
         */
         public deregisterListener(listener: any): Broadcaster;
+    }
+}
+declare module Plottable {
+    class DataSource extends Broadcaster {
+        /**
+        * Creates a new DataSource.
+        *
+        * @constructor
+        * @param {any[]} data
+        * @param {any} metadata An object containing additional information.
+        */
+        constructor(data?: any[], metadata?: any);
+        /**
+        * Retrieves the current data from the DataSource, or sets the data.
+        *
+        * @param {any[]} [data] The new data.
+        * @returns {any[]|DataSource} The current data, or the calling DataSource.
+        */
+        public data(): any[];
+        public data(data: any[]): DataSource;
+        /**
+        * Retrieves the current metadata from the DataSource, or sets the metadata.
+        *
+        * @param {any[]} [metadata] The new metadata.
+        * @returns {any[]|DataSource} The current metadata, or the calling DataSource.
+        */
+        public metadata(): any;
+        public metadata(metadata: any): DataSource;
     }
 }
 declare module Plottable {
@@ -165,6 +195,13 @@ declare module Plottable {
         * @returns {Component} The calling Component.
         */
         public renderTo(element: any): Component;
+        /**
+        * Cause the Component to recompute layout and redraw. Useful if the window resized.
+        *
+        * @param {number} [availableWidth]  - the width of the container element
+        * @param {number} [availableHeight] - the height of the container element
+        */
+        public resize(width?: number, height?: number): Component;
         /**
         * Sets the x alignment of the Component.
         *
@@ -251,6 +288,78 @@ declare module Plottable {
         * @return {ComponentGroup}
         */
         public merge(c: Component): ComponentGroup;
+        /**
+        * Blow up a component and its DOM, so it can be safely removed
+        */
+        public remove(): void;
+    }
+}
+declare module Plottable {
+    class ComponentGroup extends Component {
+        /**
+        * Creates a ComponentGroup.
+        *
+        * @constructor
+        * @param {Component[]} [components] The Components in the ComponentGroup.
+        */
+        constructor(components?: Component[]);
+        public merge(c: Component): ComponentGroup;
+        public isFixedWidth(): boolean;
+        public isFixedHeight(): boolean;
+        public remove(): void;
+    }
+}
+declare module Plottable {
+    class Table extends Component {
+        /**
+        * Creates a Table.
+        *
+        * @constructor
+        * @param {Component[][]} [rows] A 2-D array of the Components to place in the table.
+        * null can be used if a cell is empty.
+        */
+        constructor(rows?: Component[][]);
+        /**
+        * Adds a Component in the specified cell.
+        *
+        * @param {number} row The row in which to add the Component.
+        * @param {number} col The column in which to add the Component.
+        * @param {Component} component The Component to be added.
+        */
+        public addComponent(row: number, col: number, component: Component): Table;
+        /**
+        * Sets the row and column padding on the Table.
+        *
+        * @param {number} rowPadding The padding above and below each row, in pixels.
+        * @param {number} colPadding the padding to the left and right of each column, in pixels.
+        * @returns {Table} The calling Table.
+        */
+        public padding(rowPadding: number, colPadding: number): Table;
+        /**
+        * Sets the layout weight of a particular row.
+        * Space is allocated to rows based on their weight. Rows with higher weights receive proportionally more space.
+        *
+        * @param {number} index The index of the row.
+        * @param {number} weight The weight to be set on the row.
+        * @returns {Table} The calling Table.
+        */
+        public rowWeight(index: number, weight: number): Table;
+        /**
+        * Sets the layout weight of a particular column.
+        * Space is allocated to columns based on their weight. Columns with higher weights receive proportionally more space.
+        *
+        * @param {number} index The index of the column.
+        * @param {number} weight The weight to be set on the column.
+        * @returns {Table} The calling Table.
+        */
+        public colWeight(index: number, weight: number): Table;
+        public minimumHeight(): number;
+        public minimumHeight(newVal: number): Table;
+        public minimumWidth(): number;
+        public minimumWidth(newVal: number): Table;
+        public isFixedWidth(): boolean;
+        public isFixedHeight(): boolean;
+        public remove(): void;
     }
 }
 declare module Plottable {
@@ -302,6 +411,43 @@ declare module Plottable {
         * @returns {Scale} A copy of the calling Scale.
         */
         public copy(): Scale;
+    }
+}
+declare module Plottable {
+    interface _IProjector {
+        accessor: IAccessor;
+        scale?: Scale;
+    }
+    class Renderer extends Component {
+        public renderArea: D3.Selection;
+        public element: D3.Selection;
+        public scales: Scale[];
+        /**
+        * Creates a Renderer.
+        *
+        * @constructor
+        * @param {any[]|DataSource} [dataset] The data or DataSource to be associated with this Renderer.
+        */
+        constructor();
+        constructor(dataset: any[]);
+        constructor(dataset: DataSource);
+        /**
+        * Retrieves the current DataSource, or sets a DataSource if the Renderer doesn't yet have one.
+        *
+        * @param {DataSource} [source] The DataSource the Renderer should use, if it doesn't yet have one.
+        * @return {DataSource|Renderer} The current DataSource or the calling Renderer.
+        */
+        public dataSource(): DataSource;
+        public dataSource(source: DataSource): Renderer;
+        public project(attrToSet: string, accessor: any, scale?: Scale): Renderer;
+        public animate(toggle?: boolean): Renderer;
+    }
+}
+declare module Plottable {
+    class RenderController {
+        static enabled: boolean;
+        static registerToRender(c: Component): void;
+        static doRender(): void;
     }
 }
 declare module Plottable {
@@ -400,6 +546,24 @@ declare module Plottable {
     }
 }
 declare module Plottable {
+    class LogScale extends QuantitiveScale {
+        /**
+        * Creates a new LogScale.
+        *
+        * @constructor
+        * @param {D3.Scale.LogScale} [scale] The D3 LogScale backing the LogScale. If not supplied, uses a default scale.
+        */
+        constructor();
+        constructor(scale: D3.Scale.LogScale);
+        /**
+        * Creates a copy of the LogScale with the same domain and range but without any registered listeners.
+        *
+        * @returns {LogScale} A copy of the calling LogScale.
+        */
+        public copy(): LogScale;
+    }
+}
+declare module Plottable {
     class OrdinalScale extends Scale {
         /**
         * Creates a new OrdinalScale. Domain and Range are set later.
@@ -456,6 +620,16 @@ declare module Plottable {
         *     (Category10/Category20/Category20b/Category20c).
         */
         constructor(scaleType?: string);
+    }
+}
+declare module Plottable {
+    class TimeScale extends QuantitiveScale {
+        /**
+        * Creates a new TimeScale.
+        *
+        * @constructor
+        */
+        constructor();
     }
 }
 declare module Plottable {
@@ -522,132 +696,15 @@ declare module Plottable {
     }
 }
 declare module Plottable {
-    class DataSource extends Broadcaster {
+    class ScaleDomainCoordinator {
         /**
-        * Creates a new DataSource.
+        * Creates a ScaleDomainCoordinator.
         *
         * @constructor
-        * @param {any[]} data
-        * @param {any} metadata An object containing additional information.
+        * @param {Scale[]} scales A list of scales whose domains should be linked.
         */
-        constructor(data?: any[], metadata?: any);
-        /**
-        * Retrieves the current data from the DataSource, or sets the data.
-        *
-        * @param {any[]} [data] The new data.
-        * @returns {any[]|DataSource} The current data, or the calling DataSource.
-        */
-        public data(): any[];
-        public data(data: any[]): DataSource;
-        /**
-        * Retrieves the current metadata from the DataSource, or sets the metadata.
-        *
-        * @param {any[]} [metadata] The new metadata.
-        * @returns {any[]|DataSource} The current metadata, or the calling DataSource.
-        */
-        public metadata(): any;
-        public metadata(metadata: any): DataSource;
-    }
-}
-declare module Plottable {
-    interface IKeyEventListenerCallback {
-        (e: D3.Event): any;
-    }
-    class KeyEventListener {
-        static initialize(): void;
-        static addCallback(keyCode: number, cb: IKeyEventListenerCallback): void;
-    }
-}
-declare module Plottable {
-    class Interaction {
-        public hitBox: D3.Selection;
-        public componentToListenTo: Component;
-        /**
-        * Creates an Interaction.
-        *
-        * @constructor
-        * @param {Component} componentToListenTo The component to listen for interactions on.
-        */
-        constructor(componentToListenTo: Component);
-        /**
-        * Registers the Interaction on the Component it's listening to.
-        * This needs to be called to activate the interaction.
-        */
-        public registerWithComponent(): Interaction;
-    }
-    interface ZoomInfo {
-        translate: number[];
-        scale: number[];
-    }
-    class PanZoomInteraction extends Interaction {
-        public xScale: QuantitiveScale;
-        public yScale: QuantitiveScale;
-        /**
-        * Creates a PanZoomInteraction.
-        *
-        * @constructor
-        * @param {Component} componentToListenTo The component to listen for interactions on.
-        * @param {QuantitiveScale} xScale The X scale to update on panning/zooming.
-        * @param {QuantitiveScale} yScale The Y scale to update on panning/zooming.
-        */
-        constructor(componentToListenTo: Component, xScale: QuantitiveScale, yScale: QuantitiveScale);
-        public resetZoom(): void;
-    }
-    class AreaInteraction extends Interaction {
-        /**
-        * Creates an AreaInteraction.
-        *
-        * @param {Component} componentToListenTo The component to listen for interactions on.
-        */
-        constructor(componentToListenTo: Component);
-        /**
-        * Adds a callback to be called when the AreaInteraction triggers.
-        *
-        * @param {(a: SelectionArea) => any} cb The function to be called. Takes in a SelectionArea in pixels.
-        * @returns {AreaInteraction} The calling AreaInteraction.
-        */
-        public callback(cb?: (a: SelectionArea) => any): AreaInteraction;
-        /**
-        * Clears the highlighted drag-selection box drawn by the AreaInteraction.
-        *
-        * @returns {AreaInteraction} The calling AreaInteraction.
-        */
-        public clearBox(): AreaInteraction;
-    }
-    class MousemoveInteraction extends Interaction {
-        constructor(componentToListenTo: Component);
-        public mousemove(x: number, y: number): void;
-    }
-    class ClickInteraction extends Interaction {
-        /**
-        * Creates a ClickInteraction.
-        *
-        * @constructor
-        * @param {Component} componentToListenTo The component to listen for clicks on.
-        */
-        constructor(componentToListenTo: Component);
-        /**
-        * Sets an callback to be called when a click is received.
-        *
-        * @param {(x: number, y: number) => any} cb: Callback to be called. Takes click x and y in pixels.
-        */
-        public callback(cb: (x: number, y: number) => any): ClickInteraction;
-    }
-    class KeyInteraction extends Interaction {
-        /**
-        * Creates a KeyInteraction.
-        *
-        * @constructor
-        * @param {Component} componentToListenTo The component to listen for keypresses on.
-        * @param {number} keyCode The key code to listen for.
-        */
-        constructor(componentToListenTo: Component, keyCode: number);
-        /**
-        * Sets an callback to be called when the designated key is pressed.
-        *
-        * @param {() => any} cb: Callback to be called.
-        */
-        public callback(cb: () => any): KeyInteraction;
+        constructor(scales: Scale[]);
+        public rescale(scale: Scale): void;
     }
 }
 declare module Plottable {
@@ -676,243 +733,6 @@ declare module Plottable {
     }
 }
 declare module Plottable {
-    interface _IProjector {
-        accessor: IAccessor;
-        scale?: Scale;
-    }
-    class Renderer extends Component {
-        public renderArea: D3.Selection;
-        public element: D3.Selection;
-        public scales: Scale[];
-        /**
-        * Creates a Renderer.
-        *
-        * @constructor
-        * @param {any[]|DataSource} [dataset] The data or DataSource to be associated with this Renderer.
-        */
-        constructor();
-        constructor(dataset: any[]);
-        constructor(dataset: DataSource);
-        /**
-        * Retrieves the current DataSource, or sets a DataSource if the Renderer doesn't yet have one.
-        *
-        * @param {DataSource} [source] The DataSource the Renderer should use, if it doesn't yet have one.
-        * @return {DataSource|Renderer} The current DataSource or the calling Renderer.
-        */
-        public dataSource(): DataSource;
-        public dataSource(source: DataSource): Renderer;
-        public project(attrToSet: string, accessor: any, scale?: Scale): Renderer;
-    }
-}
-declare module Plottable {
-    class XYRenderer extends Renderer {
-        public dataSelection: D3.UpdateSelection;
-        public xScale: Scale;
-        public yScale: Scale;
-        /**
-        * Creates an XYRenderer.
-        *
-        * @constructor
-        * @param {any[]|DataSource} [dataset] The data or DataSource to be associated with this Renderer.
-        * @param {Scale} xScale The x scale to use.
-        * @param {Scale} yScale The y scale to use.
-        * @param {IAccessor} [xAccessor] A function for extracting x values from the data.
-        * @param {IAccessor} [yAccessor] A function for extracting y values from the data.
-        */
-        constructor(dataset: any, xScale: Scale, yScale: Scale, xAccessor?: any, yAccessor?: any);
-        public project(attrToSet: string, accessor: any, scale?: Scale): XYRenderer;
-    }
-}
-declare module Plottable {
-    class CircleRenderer extends XYRenderer {
-        /**
-        * Creates a CircleRenderer.
-        *
-        * @constructor
-        * @param {IDataset} dataset The dataset to render.
-        * @param {Scale} xScale The x scale to use.
-        * @param {Scale} yScale The y scale to use.
-        * @param {IAccessor} [xAccessor] A function for extracting x values from the data.
-        * @param {IAccessor} [yAccessor] A function for extracting y values from the data.
-        * @param {IAccessor} [rAccessor] A function for extracting radius values from the data.
-        */
-        constructor(dataset: any, xScale: Scale, yScale: Scale, xAccessor?: any, yAccessor?: any, rAccessor?: any);
-        public project(attrToSet: string, accessor: any, scale?: Scale): CircleRenderer;
-    }
-}
-declare module Plottable {
-    class LineRenderer extends XYRenderer {
-        /**
-        * Creates a LineRenderer.
-        *
-        * @constructor
-        * @param {IDataset} dataset The dataset to render.
-        * @param {Scale} xScale The x scale to use.
-        * @param {Scale} yScale The y scale to use.
-        * @param {IAccessor} [xAccessor] A function for extracting x values from the data.
-        * @param {IAccessor} [yAccessor] A function for extracting y values from the data.
-        */
-        constructor(dataset: any, xScale: Scale, yScale: Scale, xAccessor?: IAccessor, yAccessor?: IAccessor);
-    }
-}
-declare module Plottable {
-    class BarRenderer extends XYRenderer {
-        /**
-        * Creates a BarRenderer.
-        *
-        * @constructor
-        * @param {IDataset} dataset The dataset to render.
-        * @param {Scale} xScale The x scale to use.
-        * @param {QuantitiveScale} yScale The y scale to use.
-        * @param {IAccessor|string|number} [xAccessor] An accessor for extracting
-        *     the start position of each bar from the data.
-        * @param {IAccessor|string|number} [widthAccessor] An accessor for extracting
-        *     the width of each bar, in pixels, from the data.
-        * @param {IAccessor|string|number} [yAccessor] An accessor for extracting
-        *     the height of each bar from the data.
-        */
-        constructor(dataset: any, xScale: Scale, yScale: QuantitiveScale, xAccessor?: IAccessor, widthAccessor?: IAccessor, yAccessor?: IAccessor);
-        /**
-        * Sets the baseline for the bars to the specified value.
-        *
-        * @param {number} value The y-value to position the baseline at.
-        * @return {BarRenderer} The calling BarRenderer.
-        */
-        public baseline(value: number): BarRenderer;
-        /**
-        * Sets the horizontal alignment of the bars.
-        *
-        * @param {string} alignment Which part of the bar should align with the bar's x-value (left/center/right).
-        * @return {BarRenderer} The calling BarRenderer.
-        */
-        public barAlignment(alignment: string): BarRenderer;
-        /**
-        * Selects the bar under the given pixel position.
-        *
-        * @param {number} x The pixel x position.
-        * @param {number} y The pixel y position.
-        * @param {boolean} [select] Whether or not to select the bar (by classing it "selected");
-        * @return {D3.Selection} The selected bar, or null if no bar was selected.
-        */
-        public selectBar(x: number, y: number, select?: boolean): D3.Selection;
-        /**
-        * Deselects all bars.
-        * @return {BarRenderer} The calling BarRenderer.
-        */
-        public deselectAll(): BarRenderer;
-    }
-}
-declare module Plottable {
-    class CategoryBarRenderer extends BarRenderer {
-        constructor(dataset: any, xScale: Scale, yScale: QuantitiveScale, xAccessor?: IAccessor, widthAccessor?: IAccessor, yAccessor?: IAccessor);
-    }
-}
-declare module Plottable {
-    class SquareRenderer extends XYRenderer {
-        /**
-        * Creates a SquareRenderer.
-        *
-        * @constructor
-        * @param {IDataset} dataset The dataset to render.
-        * @param {Scale} xScale The x scale to use.
-        * @param {Scale} yScale The y scale to use.
-        * @param {IAccessor} [xAccessor] A function for extracting x values from the data.
-        * @param {IAccessor} [yAccessor] A function for extracting y values from the data.
-        * @param {IAccessor} [rAccessor] A function for extracting radius values from the data.
-        */
-        constructor(dataset: any, xScale: Scale, yScale: Scale, xAccessor?: IAccessor, yAccessor?: IAccessor, rAccessor?: IAccessor);
-    }
-}
-declare module Plottable {
-    class GridRenderer extends XYRenderer {
-        public colorScale: Scale;
-        public xScale: OrdinalScale;
-        public yScale: OrdinalScale;
-        /**
-        * Creates a GridRenderer.
-        *
-        * @constructor
-        * @param {IDataset} dataset The dataset to render.
-        * @param {OrdinalScale} xScale The x scale to use.
-        * @param {OrdinalScale} yScale The y scale to use.
-        * @param {ColorScale|InterpolatedColorScale} colorScale The color scale to use for each grid
-        *     cell.
-        * @param {IAccessor|string|number} [xAccessor] An accessor for extracting
-        *     the x position of each grid cell from the data.
-        * @param {IAccessor|string|number} [yAccessor] An accessor for extracting
-        *     the y position of each grid cell from the data.
-        * @param {IAccessor|string|number} [valueAccessor] An accessor for
-        *     extracting value of each grid cell from the data. This value will
-        *     be pass through the color scale to determine the color of the cell.
-        */
-        constructor(dataset: any, xScale: OrdinalScale, yScale: OrdinalScale, colorScale: Scale, xAccessor?: any, yAccessor?: any, valueAccessor?: any);
-    }
-}
-declare module Plottable {
-    class Table extends Component {
-        /**
-        * Creates a Table.
-        *
-        * @constructor
-        * @param {Component[][]} [rows] A 2-D array of the Components to place in the table.
-        * null can be used if a cell is empty.
-        */
-        constructor(rows?: Component[][]);
-        /**
-        * Adds a Component in the specified cell.
-        *
-        * @param {number} row The row in which to add the Component.
-        * @param {number} col The column in which to add the Component.
-        * @param {Component} component The Component to be added.
-        */
-        public addComponent(row: number, col: number, component: Component): Table;
-        /**
-        * Sets the row and column padding on the Table.
-        *
-        * @param {number} rowPadding The padding above and below each row, in pixels.
-        * @param {number} colPadding the padding to the left and right of each column, in pixels.
-        * @returns {Table} The calling Table.
-        */
-        public padding(rowPadding: number, colPadding: number): Table;
-        /**
-        * Sets the layout weight of a particular row.
-        * Space is allocated to rows based on their weight. Rows with higher weights receive proportionally more space.
-        *
-        * @param {number} index The index of the row.
-        * @param {number} weight The weight to be set on the row.
-        * @returns {Table} The calling Table.
-        */
-        public rowWeight(index: number, weight: number): Table;
-        /**
-        * Sets the layout weight of a particular column.
-        * Space is allocated to columns based on their weight. Columns with higher weights receive proportionally more space.
-        *
-        * @param {number} index The index of the column.
-        * @param {number} weight The weight to be set on the column.
-        * @returns {Table} The calling Table.
-        */
-        public colWeight(index: number, weight: number): Table;
-        public minimumHeight(): number;
-        public minimumHeight(newVal: number): Table;
-        public minimumWidth(): number;
-        public minimumWidth(newVal: number): Table;
-        public isFixedWidth(): boolean;
-        public isFixedHeight(): boolean;
-    }
-}
-declare module Plottable {
-    class ScaleDomainCoordinator {
-        /**
-        * Creates a ScaleDomainCoordinator.
-        *
-        * @constructor
-        * @param {Scale[]} scales A list of scales whose domains should be linked.
-        */
-        constructor(scales: Scale[]);
-        public rescale(scale: Scale): void;
-    }
-}
-declare module Plottable {
     class Legend extends Component {
         /**
         * Creates a Legend.
@@ -933,6 +753,299 @@ declare module Plottable {
     }
 }
 declare module Plottable {
+    class XYRenderer extends Renderer {
+        public dataSelection: D3.UpdateSelection;
+        public xScale: Scale;
+        public yScale: Scale;
+        /**
+        * Creates an XYRenderer.
+        *
+        * @constructor
+        * @param {any[]|DataSource} [dataset] The data or DataSource to be associated with this Renderer.
+        * @param {Scale} xScale The x scale to use.
+        * @param {Scale} yScale The y scale to use.
+        */
+        constructor(dataset: any, xScale: Scale, yScale: Scale);
+        public project(attrToSet: string, accessor: any, scale?: Scale): XYRenderer;
+    }
+}
+declare module Plottable {
+    class CircleRenderer extends XYRenderer {
+        /**
+        * Creates a CircleRenderer.
+        *
+        * @constructor
+        * @param {IDataset} dataset The dataset to render.
+        * @param {Scale} xScale The x scale to use.
+        * @param {Scale} yScale The y scale to use.
+        */
+        constructor(dataset: any, xScale: Scale, yScale: Scale);
+        public project(attrToSet: string, accessor: any, scale?: Scale): CircleRenderer;
+    }
+}
+declare module Plottable {
+    class LineRenderer extends XYRenderer {
+        /**
+        * Creates a LineRenderer.
+        *
+        * @constructor
+        * @param {IDataset} dataset The dataset to render.
+        * @param {Scale} xScale The x scale to use.
+        * @param {Scale} yScale The y scale to use.
+        */
+        constructor(dataset: any, xScale: Scale, yScale: Scale);
+    }
+}
+declare module Plottable {
+    class SquareRenderer extends XYRenderer {
+        /**
+        * Creates a SquareRenderer.
+        *
+        * @constructor
+        * @param {IDataset} dataset The dataset to render.
+        * @param {Scale} xScale The x scale to use.
+        * @param {Scale} yScale The y scale to use.
+        */
+        constructor(dataset: any, xScale: Scale, yScale: Scale);
+    }
+}
+declare module Plottable {
+    class GridRenderer extends XYRenderer {
+        public colorScale: Scale;
+        public xScale: OrdinalScale;
+        public yScale: OrdinalScale;
+        /**
+        * Creates a GridRenderer.
+        *
+        * @constructor
+        * @param {IDataset} dataset The dataset to render.
+        * @param {OrdinalScale} xScale The x scale to use.
+        * @param {OrdinalScale} yScale The y scale to use.
+        * @param {ColorScale|InterpolatedColorScale} colorScale The color scale to use for each grid
+        *     cell.
+        */
+        constructor(dataset: any, xScale: OrdinalScale, yScale: OrdinalScale, colorScale: Scale);
+        public project(attrToSet: string, accessor: any, scale?: Scale): GridRenderer;
+    }
+}
+declare module Plottable {
+    class AbstractBarRenderer extends XYRenderer {
+        /**
+        * Creates an AbstractBarRenderer.
+        *
+        * @constructor
+        * @param {IDataset} dataset The dataset to render.
+        * @param {Scale} xScale The x scale to use.
+        * @param {Scale} yScale The y scale to use.
+        */
+        constructor(dataset: any, xScale: Scale, yScale: Scale);
+        /**
+        * Sets the baseline for the bars to the specified value.
+        *
+        * @param {number} value The value to position the baseline at.
+        * @return {AbstractBarRenderer} The calling AbstractBarRenderer.
+        */
+        public baseline(value: number): AbstractBarRenderer;
+        /**
+        * Sets the bar alignment relative to the independent axis.
+        * Behavior depends on subclass implementation.
+        *
+        * @param {string} alignment The desired alignment.
+        * @return {AbstractBarRenderer} The calling AbstractBarRenderer.
+        */
+        public barAlignment(alignment: string): AbstractBarRenderer;
+        /**
+        * Selects the bar under the given pixel position.
+        *
+        * @param {number} x The pixel x position.
+        * @param {number} y The pixel y position.
+        * @param {boolean} [select] Whether or not to select the bar (by classing it "selected");
+        * @return {D3.Selection} The selected bar, or null if no bar was selected.
+        */
+        public selectBar(x: number, y: number, select?: boolean): D3.Selection;
+        /**
+        * Deselects all bars.
+        * @return {AbstractBarRenderer} The calling AbstractBarRenderer.
+        */
+        public deselectAll(): AbstractBarRenderer;
+    }
+}
+declare module Plottable {
+    class BarRenderer extends AbstractBarRenderer {
+        /**
+        * Creates a BarRenderer.
+        *
+        * @constructor
+        * @param {IDataset} dataset The dataset to render.
+        * @param {Scale} xScale The x scale to use.
+        * @param {QuantitiveScale} yScale The y scale to use.
+        */
+        constructor(dataset: any, xScale: Scale, yScale: QuantitiveScale);
+        /**
+        * Sets the horizontal alignment of the bars.
+        *
+        * @param {string} alignment Which part of the bar should align with the bar's x-value (left/center/right).
+        * @return {BarRenderer} The calling BarRenderer.
+        */
+        public barAlignment(alignment: string): BarRenderer;
+    }
+}
+declare module Plottable {
+    class HorizontalBarRenderer extends AbstractBarRenderer {
+        /**
+        * Creates a HorizontalBarRenderer.
+        *
+        * @constructor
+        * @param {IDataset} dataset The dataset to render.
+        * @param {QuantitiveScale} xScale The x scale to use.
+        * @param {Scale} yScale The y scale to use.
+        */
+        constructor(dataset: any, xScale: QuantitiveScale, yScale: Scale);
+        /**
+        * Sets the vertical alignment of the bars.
+        *
+        * @param {string} alignment Which part of the bar should align with the bar's x-value (top/middle/bottom).
+        * @return {HorizontalBarRenderer} The calling HorizontalBarRenderer.
+        */
+        public barAlignment(alignment: string): HorizontalBarRenderer;
+    }
+}
+declare module Plottable {
+    interface IKeyEventListenerCallback {
+        (e: D3.Event): any;
+    }
+    class KeyEventListener {
+        static initialize(): void;
+        static addCallback(keyCode: number, cb: IKeyEventListenerCallback): void;
+    }
+}
+declare module Plottable {
+    class Interaction {
+        public hitBox: D3.Selection;
+        public componentToListenTo: Component;
+        /**
+        * Creates an Interaction.
+        *
+        * @constructor
+        * @param {Component} componentToListenTo The component to listen for interactions on.
+        */
+        constructor(componentToListenTo: Component);
+        /**
+        * Registers the Interaction on the Component it's listening to.
+        * This needs to be called to activate the interaction.
+        */
+        public registerWithComponent(): Interaction;
+    }
+}
+declare module Plottable {
+    class ClickInteraction extends Interaction {
+        /**
+        * Creates a ClickInteraction.
+        *
+        * @constructor
+        * @param {Component} componentToListenTo The component to listen for clicks on.
+        */
+        constructor(componentToListenTo: Component);
+        /**
+        * Sets an callback to be called when a click is received.
+        *
+        * @param {(x: number, y: number) => any} cb: Callback to be called. Takes click x and y in pixels.
+        */
+        public callback(cb: (x: number, y: number) => any): ClickInteraction;
+    }
+}
+declare module Plottable {
+    class MousemoveInteraction extends Interaction {
+        constructor(componentToListenTo: Component);
+        public mousemove(x: number, y: number): void;
+    }
+}
+declare module Plottable {
+    class KeyInteraction extends Interaction {
+        /**
+        * Creates a KeyInteraction.
+        *
+        * @constructor
+        * @param {Component} componentToListenTo The component to listen for keypresses on.
+        * @param {number} keyCode The key code to listen for.
+        */
+        constructor(componentToListenTo: Component, keyCode: number);
+        /**
+        * Sets an callback to be called when the designated key is pressed.
+        *
+        * @param {() => any} cb: Callback to be called.
+        */
+        public callback(cb: () => any): KeyInteraction;
+    }
+}
+declare module Plottable {
+    class PanZoomInteraction extends Interaction {
+        public xScale: QuantitiveScale;
+        public yScale: QuantitiveScale;
+        /**
+        * Creates a PanZoomInteraction.
+        *
+        * @constructor
+        * @param {Component} componentToListenTo The component to listen for interactions on.
+        * @param {QuantitiveScale} xScale The X scale to update on panning/zooming.
+        * @param {QuantitiveScale} yScale The Y scale to update on panning/zooming.
+        */
+        constructor(componentToListenTo: Component, xScale: QuantitiveScale, yScale: QuantitiveScale);
+        public resetZoom(): void;
+    }
+}
+declare module Plottable {
+    class DragInteraction extends Interaction {
+        public origin: number[];
+        public location: number[];
+        public callbackToCall: (dragInfo: any) => any;
+        /**
+        * Creates a DragInteraction.
+        *
+        * @param {Component} componentToListenTo The component to listen for interactions on.
+        */
+        constructor(componentToListenTo: Component);
+        /**
+        * Adds a callback to be called when the AreaInteraction triggers.
+        *
+        * @param {(a: SelectionArea) => any} cb The function to be called. Takes in a SelectionArea in pixels.
+        * @returns {AreaInteraction} The calling AreaInteraction.
+        */
+        public callback(cb?: (a: any) => any): DragInteraction;
+    }
+}
+declare module Plottable {
+    class DragBoxInteraction extends DragInteraction {
+        public dragBox: D3.Selection;
+        public boxIsDrawn: boolean;
+        /**
+        * Clears the highlighted drag-selection box drawn by the AreaInteraction.
+        *
+        * @returns {AreaInteraction} The calling AreaInteraction.
+        */
+        public clearBox(): DragBoxInteraction;
+        public setBox(x0: number, x1: number, y0: number, y1: number): DragBoxInteraction;
+    }
+}
+declare module Plottable {
+    class XDragBoxInteraction extends DragBoxInteraction {
+        public setBox(x0: number, x1: number): XDragBoxInteraction;
+    }
+}
+declare module Plottable {
+    class XYDragBoxInteraction extends DragBoxInteraction {
+    }
+}
+declare module Plottable {
+    interface IPixelArea {
+        xMin: number;
+        xMax: number;
+        yMin: number;
+        yMax: number;
+    }
+    function setupDragBoxZoom(dragBox: XYDragBoxInteraction, xScale: QuantitiveScale, yScale: QuantitiveScale): void;
+}
+declare module Plottable {
     class StandardChart extends Table {
         constructor();
         public yAxis(y: YAxis): StandardChart;
@@ -948,7 +1061,7 @@ declare module Plottable {
         public titleLabel(x: TitleLabel): StandardChart;
         public titleLabel(x: string): StandardChart;
         public titleLabel(): TitleLabel;
-        public addCenterComponent(c: Component): StandardChart;
+        public center(c: Component): StandardChart;
     }
 }
 declare module Plottable {
@@ -1049,20 +1162,6 @@ declare module Plottable {
     }
 }
 declare module Plottable {
-    class ComponentGroup extends Component {
-        /**
-        * Creates a ComponentGroup.
-        *
-        * @constructor
-        * @param {Component[]} [components] The Components in the ComponentGroup.
-        */
-        constructor(components?: Component[]);
-        public merge(c: Component): ComponentGroup;
-        public isFixedWidth(): boolean;
-        public isFixedHeight(): boolean;
-    }
-}
-declare module Plottable {
     class Gridlines extends Component {
         /**
         * Creates a set of Gridlines.
@@ -1072,6 +1171,19 @@ declare module Plottable {
         * @param {QuantitiveScale} yScale The scale to base the y gridlines on. Pass null if no gridlines are desired.
         */
         constructor(xScale: QuantitiveScale, yScale: QuantitiveScale);
+    }
+}
+declare module Plottable {
+    class AreaRenderer extends XYRenderer {
+        /**
+        * Creates an AreaRenderer.
+        *
+        * @constructor
+        * @param {IDataset} dataset The dataset to render.
+        * @param {Scale} xScale The x scale to use.
+        * @param {Scale} yScale The y scale to use.
+        */
+        constructor(dataset: any, xScale: Scale, yScale: Scale);
     }
 }
 declare module Plottable {
@@ -1101,21 +1213,5 @@ declare module Plottable {
     }
     interface IBroadcasterCallback {
         (broadcaster: Broadcaster, ...args: any[]): any;
-    }
-}
-declare module Plottable {
-    class AreaRenderer extends XYRenderer {
-        /**
-        * Creates an AreaRenderer.
-        *
-        * @constructor
-        * @param {IDataset} dataset The dataset to render.
-        * @param {Scale} xScale The x scale to use.
-        * @param {Scale} yScale The y scale to use.
-        * @param {any} [xAccessor] A function for extracting x values from the data.
-        * @param {any} [yAccessor] A function for extracting upper y values to color between.
-        * @param {any} [y0Accessor] A function for extracting lower y values to color between.
-        */
-        constructor(dataset: any, xScale: Scale, yScale: Scale, xAccessor?: any, yAccessor?: any, y0Accessor?: any);
     }
 }

@@ -1,7 +1,7 @@
 
 
 svg.plottable {
-  display : block; // SVGs must be block elements for width/height calculations to work in Firefox.
+  display : block; /* SVGs must be block elements for width/height calculations to work in Firefox. */
 }
 
 .plottable div {
@@ -107,6 +107,7 @@ svg.plottable {
 .plottable .drag-box {
   fill: aliceblue;
   opacity: 1;
+  stroke: #C0C8FF;
 
 }
 
@@ -123,6 +124,5 @@ svg.plottable {
 }
 
 .plottable .legend .legend-box {
-  fill: white;
-  opacity: 0.7;
+  opacity: 0;
 }
