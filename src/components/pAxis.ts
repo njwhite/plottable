@@ -1,4 +1,4 @@
-///<reference path="reference.ts" />
+///<reference path="../reference.ts" />
 
 module Plottable {
   export class PAxis extends Component {
@@ -42,9 +42,14 @@ module Plottable {
 
       this.classed("axis", true);
       if (formatter == null) {
+        var d3formatter = d3.format(".3s");
         formatter = function (n: any) {
           if (typeof n === "number") {
-            return Math.round(n * 100) / 100; // default keeps two decimal places
+            if (Math.abs(n) > 100) {
+              return d3formatter(n);
+            } else {
+              return Math.round(n * 100) / 100; // default keeps two decimal places
+            }
           }
           return n;
         };
@@ -61,7 +66,7 @@ module Plottable {
       return this;
     }
 
-    public _render() {
+    public _doRender() {
       // if (this.orientation === "left") {this.axisElement.attr("transform", "translate(" + this.minimumWidth() + ", 0)");};
       // if (this.orientation === "top")  {this.axisElement.attr("transform", "translate(0," + this.minimumHeight() + ")");};
       var domain = this.scale.domain();
